@@ -1,0 +1,43 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+  
+  /* Arctic Indigo Theme Tokens */
+  --color-arctic-mist: #F6F8FC;
+  --color-midnight-arctic: #0B1120;
+  --color-deep-navy: #151F32;
+  --color-arctic-indigo: #3347B5;
+  --color-electric-indigo: #5794FF;
+  --color-teal: #16A6A0;
+  --color-cool-teal: #52D6C7;
+  --color-deep-slate: #172033;
+  --color-ice-white: #E7EDF8;
+}
+
+/* Base theme application */
+@layer base {
+  :root {
+    color-scheme: dark;
+  }
+  
+  body {
+    font-family: var(--font-sans);
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+}
+
+/* Dark Mode Defaults (Midnight Arctic) */
+html.dark body {
+  background-color: var(--color-midnight-arctic);
+  color: var(--color-ice-white);
+  background-image: radial-gradient(ellipse at 8% 0%, rgba(87, 148, 255, 0.07), transparent 35%);
+}
+
+/* Light Mode Overrides (Arctic Mist) */
+html.light body {
+  background-color: var(--color-arctic-mist);
+  color: var(--color-deep-slate);
+  background-image: radial-gradient(ellipse at 8% 0%, rgba(51, 71, 181, 0.05), transparent 35%);
+}
