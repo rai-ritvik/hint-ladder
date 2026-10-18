@@ -1,5 +1,7 @@
 import React, {useState} from "react";
 import TleCalculator from "./TleCalculator";
+import HintLadder from "./HintLadder";
+import DryRunStepper from "./DryRunStepper";
 
 export default function Workspace({setCurrentScreen}) {
   const [problemTitle, setProblemTitle] = useState(
@@ -12,6 +14,7 @@ export default function Workspace({setCurrentScreen}) {
     "I used two nested loops to check substrings and a HashSet to detect duplicates, but it gets too slow on large inputs.",
   );
   const [activePreset, setActivePreset] = useState("substring");
+  const [score, setScore] = useState(100);
 
   const presets = {
     substring: {
@@ -35,6 +38,7 @@ export default function Workspace({setCurrentScreen}) {
     setProblemTitle(presets[key].title);
     setProblemStatement(presets[key].statement);
     setAttemptText(presets[key].attempt);
+    setScore(100); // reset score on preset change
   };
 
   return (
@@ -58,7 +62,7 @@ export default function Workspace({setCurrentScreen}) {
             Workspace ready
           </span>
           <span className="inline-flex items-center gap-1.5 border border-[#35578F] bg-electric-indigo/12 rounded-full px-3 py-1 text-xs text-[#9EC0FF] font-mono">
-            ✦ 100 points
+            ✦ {score} points
           </span>
         </div>
       </div>
@@ -66,7 +70,6 @@ export default function Workspace({setCurrentScreen}) {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Left Column: Presets + TLE + Form */}
         <div className="xl:col-span-5 space-y-6">
-          {/* Presets */}
           <div className="bg-deep-navy border border-[#2B3950] rounded-2xl p-5 shadow-lg">
             <div className="text-[10px] uppercase tracking-[0.16em] font-bold text-[#9AABC4] mb-2">
               Quick problem presets
@@ -97,10 +100,8 @@ export default function Workspace({setCurrentScreen}) {
             </div>
           </div>
 
-          {/* TLE Calculator Component */}
           <TleCalculator />
 
-          {/* Problem Inputs */}
           <div className="bg-deep-navy border border-[#2B3950] rounded-2xl p-5 shadow-lg space-y-4">
             <div>
               <label className="block text-xs text-[#9AABC4] mb-1.5">
@@ -143,24 +144,16 @@ export default function Workspace({setCurrentScreen}) {
               onClick={() => setCurrentScreen("logic")}
               className="w-full py-3 rounded-xl bg-electric-indigo text-midnight-arctic font-bold text-xs hover:bg-[#9EC0FF] transition shadow-lg shadow-electric-indigo/10 flex items-center justify-center gap-2"
             >
-              <span>Generate my hint ladder</span>
+              <span>Verify & proceed to Logic Gate</span>
               <span>→</span>
             </button>
           </div>
         </div>
 
-        {/* Right Column Preview placeholder for Step 3 */}
-        <div className="xl:col-span-7">
-          <div className="bg-deep-navy border border-[#2B3950] rounded-2xl p-8 text-center text-[#9AABC4] flex flex-col items-center justify-center h-full min-h-100">
-            <div className="text-3xl mb-2">🪜</div>
-            <h3 className="text-sm font-bold text-ice-white">
-              Hint Ladder & Dry-Run Preview
-            </h3>
-            <p className="text-xs text-[#9AABC4] mt-1 max-w-sm">
-              In Step 3, this side will render our 3 progressive hint cards,
-              cooldown timers, and interactive code dry-run stepper.
-            </p>
-          </div>
+        {/* Right Column: Hint Ladder & Dry Run Stepper */}
+        <div className="xl:col-span-7 space-y-6">
+          <HintLadder score={score} setScore={setScore} />
+          <DryRunStepper />
         </div>
       </div>
     </div>
