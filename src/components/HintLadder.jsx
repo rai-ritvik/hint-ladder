@@ -146,7 +146,7 @@ export default function HintLadder({score, setScore}) {
           <p className="text-sm leading-7 text-[#C5D0E2]">
             For each character, update the window's left boundary only when
             necessary, then record the largest valid window length. Time
-            complexity: $O(N)$, Space complexity: $O(\min(N, \text{charset}))$.
+            complexity: O(N), Space complexity: O(min(N, 'charset')).
           </p>
         </div>
 
