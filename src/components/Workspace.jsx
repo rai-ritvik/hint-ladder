@@ -2,44 +2,65 @@ import React, {useState} from "react";
 import TleCalculator from "./TleCalculator";
 import HintLadder from "./HintLadder";
 import DryRunStepper from "./DryRunStepper";
+import {PRESETS} from "../data/presets";
+import {generateCustomProblemLadder} from "../services/aiService"; // 1. Import our service
 
-export default function Workspace({setCurrentScreen}) {
-  const [problemTitle, setProblemTitle] = useState(
-    "Longest Substring Without Repeating Characters",
-  );
+export default function Workspace({
+  setCurrentScreen,
+  activeProblem,
+  setActiveProblem,
+  score,
+  setScore,
+}) {
+  // 2. Local form state initialized from activeProblem
+  const [problemTitle, setProblemTitle] = useState(activeProblem.title);
   const [problemStatement, setProblemStatement] = useState(
-    "Given a string s, find the length of the longest substring without repeating characters. Constraints: 0 <= s.length <= 10^5.",
+    activeProblem.statement,
   );
-  const [attemptText, setAttemptText] = useState(
-    "I used two nested loops to check substrings and a HashSet to detect duplicates, but it gets too slow on large inputs.",
+  const [attemptText, setAttemptText] = useState(activeProblem.attempt);
+
+  const [activePreset, setActivePreset] = useState(
+    activeProblem.id || "substring",
   );
-  const [activePreset, setActivePreset] = useState("substring");
-  const [score, setScore] = useState(100);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [statusMsg, setStatusMsg] = useState("");
 
-  const presets = {
-    substring: {
-      title: "Longest Substring Without Repeating Characters",
-      statement:
-        "Given a string s, find the length of the longest substring without repeating characters. Constraints: 0 <= s.length <= 10^5.",
-      attempt:
-        "I used two nested loops to check substrings and a HashSet to detect duplicates, but it gets too slow on large inputs.",
-    },
-    subarray: {
-      title: "Subarray Sum Equals K",
-      statement:
-        "Given an integer array nums and an integer k, return the total number of continuous subarrays whose sum equals k.",
-      attempt:
-        "I am checking every possible subarray and summing its elements, but the nested loops are slow.",
-    },
-  };
-
+  // 3. Handle clicking a preset
   const handlePresetSelect = (key) => {
+    const preset = PRESETS[key];
     setActivePreset(key);
-    setProblemTitle(presets[key].title);
-    setProblemStatement(presets[key].statement);
-    setAttemptText(presets[key].attempt);
-    setScore(100); // reset score on preset change
+    setProblemTitle(preset.title);
+    setProblemStatement(preset.statement);
+    setAttemptText(preset.attempt);
+    setActiveProblem(preset); // Updates App.jsx state!
+    setScore(100);
+    setStatusMsg(`Loaded preset: ${preset.label}`);
   };
+
+  // 4. Handle generating a custom problem
+  const handleGenerateCustom = async () => {
+    if (!attemptText.trim()) {
+      setStatusMsg("Please describe what you have tried so far first.");
+      return;
+    }
+    setIsGenerating(true);
+    setStatusMsg("Analyzing your problem and attempt...");
+
+    // Calls our service (Gemini API or local fallback)
+    const generated = await generateCustomProblemLadder({
+      title: problemTitle,
+      statement: problemStatement,
+      attempt: attemptText,
+    });
+
+    setActivePreset("custom");
+    setActiveProblem(generated); // Updates App.jsx state with the new AI JSON!
+    setScore(100);
+    setIsGenerating(false);
+    setStatusMsg(`Generated hint ladder for: ${generated.title}`);
+  };
+
+  // ... (Keep the rest of your return statement the same for now, but update the "Generate" button)
 
   return (
     <div className="space-y-6">
@@ -70,38 +91,39 @@ export default function Workspace({setCurrentScreen}) {
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
         {/* Left Column: Presets + TLE + Form */}
         <div className="xl:col-span-5 space-y-6">
+          {/* Presets Card (Now maps over all 3 presets dynamically) */}
           <div className="bg-deep-navy border border-[#2B3950] rounded-2xl p-5 shadow-lg">
-            <div className="text-[10px] uppercase tracking-[0.16em] font-bold text-[#9AABC4] mb-2">
-              Quick problem presets
+            <div className="flex items-center justify-between mb-2.5">
+              <div className="text-[10px] uppercase tracking-[0.16em] font-bold text-[#9AABC4]">
+                Quick problem presets
+              </div>
+              <span className="text-[11px] text-[#9AABC4]">Demo data</span>
             </div>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => handlePresetSelect("substring")}
-                className={`text-left p-3 rounded-xl border transition ${activePreset === "substring" ? "border-[#35578F] bg-electric-indigo/15 text-[#9EC0FF]" : "border-[#2B3950] bg-midnight-arctic text-[#C5D0E2] hover:border-electric-indigo"}`}
-              >
-                <span className="block text-xs font-semibold">
-                  Longest Substring
-                </span>
-                <span className="block text-[10px] text-[#9AABC4] mt-0.5">
-                  Sliding window
-                </span>
-              </button>
-              <button
-                onClick={() => handlePresetSelect("subarray")}
-                className={`text-left p-3 rounded-xl border transition ${activePreset === "subarray" ? "border-[#35578F] bg-electric-indigo/15 text-[#9EC0FF]" : "border-[#2B3950] bg-midnight-arctic text-[#C5D0E2] hover:border-electric-indigo"}`}
-              >
-                <span className="block text-xs font-semibold">
-                  Subarray Sum = K
-                </span>
-                <span className="block text-[10px] text-[#9AABC4] mt-0.5">
-                  Prefix sum
-                </span>
-              </button>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+              {Object.keys(PRESETS).map((key) => (
+                <button
+                  key={key}
+                  onClick={() => handlePresetSelect(key)}
+                  className={`text-left p-3 rounded-xl border transition ${
+                    activePreset === key
+                      ? "border-[#35578F] bg-electric-indigo/15 text-[#9EC0FF]"
+                      : "border-[#2B3950] bg-midnight-arctic text-[#C5D0E2] hover:border-electric-indigo"
+                  }`}
+                >
+                  <span className="block text-xs font-semibold">
+                    {PRESETS[key].label}
+                  </span>
+                  <span className="block text-[10px] text-[#9AABC4] mt-0.5">
+                    {PRESETS[key].shortTag}
+                  </span>
+                </button>
+              ))}
             </div>
           </div>
 
           <TleCalculator />
 
+          {/* Problem Input Form */}
           <div className="bg-deep-navy border border-[#2B3950] rounded-2xl p-5 shadow-lg space-y-4">
             <div>
               <label className="block text-xs text-[#9AABC4] mb-1.5">
@@ -111,6 +133,7 @@ export default function Workspace({setCurrentScreen}) {
                 type="text"
                 value={problemTitle}
                 onChange={(e) => setProblemTitle(e.target.value)}
+                placeholder="e.g., Two Sum, Binary Search..."
                 className="w-full bg-midnight-arctic border border-[#2B3950] rounded-xl px-3.5 py-2.5 text-xs font-semibold text-ice-white outline-none focus:border-electric-indigo"
               />
             </div>
@@ -123,6 +146,7 @@ export default function Workspace({setCurrentScreen}) {
                 rows="3"
                 value={problemStatement}
                 onChange={(e) => setProblemStatement(e.target.value)}
+                placeholder="Paste any DSA problem statement here..."
                 className="w-full bg-midnight-arctic border border-[#2B3950] rounded-xl px-3.5 py-2.5 text-xs text-ice-white outline-none focus:border-electric-indigo resize-y"
               />
             </div>
@@ -140,20 +164,48 @@ export default function Workspace({setCurrentScreen}) {
               />
             </div>
 
+            {/* THIS is the updated Generate Button! */}
             <button
-              onClick={() => setCurrentScreen("logic")}
-              className="w-full py-3 rounded-xl bg-electric-indigo text-midnight-arctic font-bold text-xs hover:bg-[#9EC0FF] transition shadow-lg shadow-electric-indigo/10 flex items-center justify-center gap-2"
+              onClick={handleGenerateCustom}
+              disabled={isGenerating}
+              className="w-full py-3 rounded-xl bg-electric-indigo text-midnight-arctic font-bold text-xs hover:bg-[#9EC0FF] disabled:opacity-50 transition shadow-lg shadow-electric-indigo/10 flex items-center justify-center gap-2"
             >
-              <span>Verify & proceed to Logic Gate</span>
+              <span>
+                {isGenerating
+                  ? "Generating hint ladder..."
+                  : "Generate my hint ladder"}
+              </span>
               <span>→</span>
             </button>
+
+            {/* Status Message for AI Loading */}
+            {statusMsg && (
+              <p className="text-[11px] text-cool-teal font-medium">
+                {statusMsg}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Right Column: Hint Ladder & Dry Run Stepper */}
-        <div className="xl:col-span-7 space-y-6">
-          <HintLadder score={score} setScore={setScore} />
-          <DryRunStepper />
+        {/* Right Column: Hint Ladder, Dry Run Stepper, and Logic Gate Button */}
+        <div className="xl:col-span-7 space-y-5">
+          {/* We pass the activeProblem data down to the children! */}
+          <HintLadder
+            problem={activeProblem}
+            score={score}
+            setScore={setScore}
+          />
+          <DryRunStepper problem={activeProblem} />
+
+          {/* The Verify button has moved here to the bottom of the learning flow */}
+          <div className="flex justify-end">
+            <button
+              onClick={() => setCurrentScreen("logic")}
+              className="px-5 py-3 rounded-xl bg-electric-indigo text-midnight-arctic font-bold text-xs hover:bg-[#9EC0FF] transition shadow-lg shadow-electric-indigo/10"
+            >
+              I solved it in my IDE — verify & log ↗
+            </button>
+          </div>
         </div>
       </div>
     </div>
